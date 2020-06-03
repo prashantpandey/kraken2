@@ -199,16 +199,11 @@ void Taxonomy::generatePrefixEncoding(const std::string &filename) const {
 
 		uint64_t parent = nodes_[node.first].parent_id;
 		uint32_t height = node.second - 1;
-		while (parent != 1) {
+		while (parent != 0) {
 			auto encoding = node_encoding_map[parent].c_str();
 			memcpy(prefix_encoding + height, &encoding, num_hash_bits);
 			parent = nodes_[parent].parent_id;
 			height--;
-		}
-
-		if (node.first != 1) {
-			auto encoding = node_encoding_map[1];
-			memcpy(prefix_encoding, &encoding, num_hash_bits);
 		}
 
 		node_encoding_map.insert({node.first, prefix_encoding});
