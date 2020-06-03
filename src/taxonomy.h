@@ -57,6 +57,7 @@ class Taxonomy {
   uint64_t LowestCommonAncestor(uint64_t a, uint64_t b);
   void WriteToDisk(const char *filename);
   void MoveToMemory();
+	void generatePrefixEncoding() const;
 
   void GenerateExternalToInternalIDMap();
   uint64_t GetInternalID(uint64_t external_id) {

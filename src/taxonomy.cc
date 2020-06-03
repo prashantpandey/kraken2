@@ -5,6 +5,8 @@
  */
 
 #include "taxonomy.h"
+#include "kv_store.h"
+#include "math.h"
 
 using std::string;
 using std::map;
@@ -120,6 +122,109 @@ void NCBITaxonomy::MarkNode(uint64_t taxid) {
   }
 }
 
+#define SEED 2038074761
+
+uint64_t MurmurHash64A ( const void * key, int len, unsigned int seed )
+{
+	const uint64_t m = 0xc6a4a7935bd1e995;
+	const int r = 47;
+	uint64_t h = seed ^ (len * m);
+	const uint64_t * data = (const uint64_t *)key;
+	const uint64_t * end = data + (len/8);
+	while(data != end)
+	{
+		uint64_t k = *data++;
+		k *= m; 
+		k ^= k >> r; 
+		k *= m; 
+		h ^= k;
+		h *= m; 
+	}
+	const unsigned char * data2 = (const unsigned char*)data;
+	switch(len & 7)
+	{
+		case 7: h ^= (uint64_t)data2[6] << 48;
+		case 6: h ^= (uint64_t)data2[5] << 40;
+		case 5: h ^= (uint64_t)data2[4] << 32;
+		case 4: h ^= (uint64_t)data2[3] << 24;
+		case 3: h ^= (uint64_t)data2[2] << 16;
+		case 2: h ^= (uint64_t)data2[1] << 8;
+		case 1: h ^= (uint64_t)data2[0];
+						h *= m;
+	};
+	h ^= h >> r;
+	h *= m;
+	h ^= h >> r;
+
+	return h;
+}
+
+uint32_t maxDepth(uint64_t node_id, const Taxonomy& taxo) {
+	  const TaxonomyNode node = taxo.nodes()[node_id];
+    if (node.child_count == 0)
+        return 1;
+    else
+    {
+			uint32_t max = 0;
+			uint32_t start = node.first_child;
+			uint32_t end = node.first_child + node.child_count;
+			  for (uint32_t i = start; i < end; i++) {
+					uint32_t depth = maxDepth(i, taxo);
+					max = max > depth ? max : depth;
+				}
+
+        return(max + 1);
+    }
+}
+
+void Taxonomy::generatePrefixEncoding() const {
+	uint32_t num_hash_bits = log2 (node_count_);
+	uint32_t num_hash_bytes = (num_hash_bits+8)/8;
+	uint32_t max_depth = maxDepth(1, *this);
+	
+	uint32_t encoding_len_bytes = num_hash_bytes * max_depth;
+	std::unordered_map<uint64_t, std::string> node_encoding_map;
+
+  ofstream taxo_file("taxon_encoding.txt");
+  queue<std::pair<uint64_t, uint32_t>> bfs_queue;
+  bfs_queue.push({1, 0});
+  while (! bfs_queue.empty()) {
+		auto node = bfs_queue.front();
+		bfs_queue.pop();
+
+		char prefix_encoding[encoding_len_bytes];
+		uint64_t hash = MurmurHash3(node.first);
+
+		memcpy(prefix_encoding + node.second, (char*)&hash, num_hash_bits);
+
+		uint64_t parent = nodes_[node.first].parent_id;
+		uint32_t height = node.second - 1;
+		while (parent != 1) {
+			auto encoding = node_encoding_map[parent].c_str();
+			memcpy(prefix_encoding + height, &encoding, num_hash_bits);
+			parent = nodes_[parent].parent_id;
+			height--;
+		}
+
+		if (node.first != 1) {
+			auto encoding = node_encoding_map[1];
+			memcpy(prefix_encoding, &encoding, num_hash_bits);
+		}
+
+		node_encoding_map.insert({node.first, prefix_encoding});
+		taxo_file << node.first << '\t' << prefix_encoding << '\n';
+
+		uint32_t start = nodes_[node.first].first_child;
+		uint32_t end = nodes_[node.first].first_child +
+			nodes_[node.first].child_count;
+		for (uint32_t i = start; i < end; i++) {
+			bfs_queue.push({i, node.second + 1});
+		}
+	}
+
+  taxo_file.close();
+}
+
 void NCBITaxonomy::ConvertToKrakenTaxonomy(const char *filename) {
   Taxonomy taxo;
   TaxonomyNode zeroes_node = { 0, 0, 0, 0, 0, 0, 0 };
@@ -128,7 +233,7 @@ void NCBITaxonomy::ConvertToKrakenTaxonomy(const char *filename) {
   taxo.nodes_ = new TaxonomyNode[taxo.node_count_];
   taxo.nodes_[0] = zeroes_node;
 
-  string name_data;
+ 	string name_data;
   string rank_data;
 
   // Because so many of the node rank names are shared, we only store one copy
