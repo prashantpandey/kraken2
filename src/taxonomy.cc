@@ -196,13 +196,13 @@ void Taxonomy::generatePrefixEncoding(const std::string &filename) const {
 		memset(prefix_encoding, 0, encoding_len_bytes);
 		uint64_t hash = MurmurHash3(node.first);
 
-		memcpy(prefix_encoding + node.second, (char*)&hash, num_hash_bits);
+		memcpy(prefix_encoding + node.second, (char*)&hash, num_hash_bytes);
 
 		uint64_t parent = nodes_[node.first].parent_id;
 		uint32_t height = node.second - 1;
 		while (parent != 0) {
 			auto encoding = node_encoding_map[parent].c_str();
-			memcpy(prefix_encoding + height, &encoding, num_hash_bits);
+			memcpy(prefix_encoding + height, &encoding, num_hash_bytes);
 			parent = nodes_[parent].parent_id;
 			height--;
 		}

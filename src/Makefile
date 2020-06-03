@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -fopenmp -Wall -std=c++11 -g 
+CXXFLAGS = -fopenmp -Wall -std=c++11 -O3 
 CXXFLAGS += -DLINEAR_PROBING
 
 .PHONY: all clean install
