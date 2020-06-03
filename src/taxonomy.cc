@@ -208,7 +208,10 @@ void Taxonomy::generatePrefixEncoding(const std::string &filename) const {
 		}
 
 		node_encoding_map.insert({node.first, prefix_encoding});
-		taxo_file << node.first << '\t' << prefix_encoding << '\n';
+		taxo_file << node.first << '\t';
+		for (uint32_t i = 0; i < encoding_len_bytes; i++)
+			taxo_file << (int)prefix_encoding[i] << ' ';
+		taxo_file << '\n';
 
 		uint32_t start = nodes_[node.first].first_child;
 		uint32_t end = nodes_[node.first].first_child +
