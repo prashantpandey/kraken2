@@ -177,7 +177,7 @@ uint32_t maxDepth(uint64_t node_id, const Taxonomy& taxo) {
     }
 }
 
-void Taxonomy::generatePrefixEncoding() const {
+void Taxonomy::generatePrefixEncoding(const std::string &filename) const {
 	uint32_t num_hash_bits = log2 (node_count_);
 	uint32_t num_hash_bytes = (num_hash_bits+8)/8;
 	uint32_t max_depth = maxDepth(1, *this);
@@ -185,7 +185,7 @@ void Taxonomy::generatePrefixEncoding() const {
 	uint32_t encoding_len_bytes = num_hash_bytes * max_depth;
 	std::unordered_map<uint64_t, std::string> node_encoding_map;
 
-  ofstream taxo_file("taxon_encoding.txt");
+  ofstream taxo_file(filename + ".encoding");
   queue<std::pair<uint64_t, uint32_t>> bfs_queue;
   bfs_queue.push({1, 0});
   while (! bfs_queue.empty()) {

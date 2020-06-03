@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
 
   Taxonomy taxonomy(opts.taxonomy_filename.c_str());
   taxonomy.GenerateExternalToInternalIDMap();
-	taxonomy.generatePrefixEncoding();
+	taxonomy.generatePrefixEncoding(opts.taxonomy_filename);
   size_t bits_needed_for_value = 1;
   while ((1 << bits_needed_for_value) < (ssize_t) taxonomy.node_count())
     bits_needed_for_value++;
