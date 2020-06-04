@@ -177,13 +177,24 @@ uint32_t maxDepth(uint64_t node_id, const Taxonomy& taxo) {
     }
 }
 
+struct EncodingArray
+{
+	EncodingArray() {}
+   EncodingArray(char in[], uint32_t len) {
+		 data = new char(len);
+		 memcpy(data, in, len);
+	 }
+   char& operator[](unsigned int idx) { return data[idx]; }
+   char *data{nullptr};
+};
+
 void Taxonomy::generatePrefixEncoding(const std::string &filename) const {
 	uint32_t num_hash_bits = log2 (node_count_);
 	uint32_t num_hash_bytes = (num_hash_bits+8)/8;
 	uint32_t max_depth = maxDepth(1, *this);
 	
 	uint32_t encoding_len_bytes = num_hash_bytes * max_depth;
-	std::unordered_map<uint64_t, std::string> node_encoding_map;
+	std::unordered_map<uint64_t, EncodingArray> node_encoding_map;
 
   ofstream taxo_file(filename + ".encoding");
   queue<std::pair<uint64_t, uint32_t>> bfs_queue;
@@ -201,13 +212,14 @@ void Taxonomy::generatePrefixEncoding(const std::string &filename) const {
 		uint64_t parent = nodes_[node.first].parent_id;
 		uint32_t height = node.second - 1;
 		while (parent != 0) {
-			auto encoding = node_encoding_map[parent].c_str();
-			memcpy(prefix_encoding + height, &encoding, num_hash_bytes);
+			memcpy(prefix_encoding + height, node_encoding_map[parent].data,
+						 num_hash_bytes);
 			parent = nodes_[parent].parent_id;
 			height--;
 		}
 
-		node_encoding_map.insert({node.first, prefix_encoding});
+		node_encoding_map[node.first] = EncodingArray(prefix_encoding,
+																									encoding_len_bytes);
 		taxo_file << node.first << '\t';
 		for (uint32_t i = 0; i < encoding_len_bytes; i++)
 			taxo_file << (int)prefix_encoding[i] << ' ';
