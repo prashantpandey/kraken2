@@ -228,7 +228,7 @@ void Taxonomy::generatePrefixEncoding(const std::string &filename) const {
 			height--;
 		}
 																									
-		taxo_file << node.first << '\t';
+		taxo_file << nodes_[node.first].external_id << '\t';
 		for (uint32_t i = 0; i < encoding_len_bytes; i++)
 			taxo_file << (int)prefix_encoding[i] << ' ';
 		taxo_file << '\n';
