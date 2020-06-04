@@ -199,6 +199,8 @@ void Taxonomy::generatePrefixEncoding(const std::string &filename) const {
 	uint32_t max_depth = maxDepth(1, *this);
 	
 	uint32_t encoding_len_bytes = num_hash_bytes * max_depth;
+	std::cout << "Node count: " << node_count_ << " Num hash bytes: " <<
+		num_hash_bytes << " Max depth: " << max_depth << '\n';
 	std::unordered_map<uint64_t, EncodingArray> node_encoding_map;
 
   ofstream taxo_file(filename + ".encoding");
