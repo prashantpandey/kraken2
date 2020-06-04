@@ -180,12 +180,17 @@ uint32_t maxDepth(uint64_t node_id, const Taxonomy& taxo) {
 struct EncodingArray
 {
 	EncodingArray() {}
-   EncodingArray(char in[], uint32_t len) {
-		 data = new char(len);
+   EncodingArray(char in[], uint32_t len) : len(len) {
+		 data = new char[len];
 		 memcpy(data, in, len);
 	 }
+   EncodingArray(const EncodingArray& other) : len(other.len) {
+		 data = new char[len];
+		 memcpy(data, other.data, len);
+   }
    char& operator[](unsigned int idx) { return data[idx]; }
    char *data{nullptr};
+   uint32_t len{0};
 };
 
 void Taxonomy::generatePrefixEncoding(const std::string &filename) const {
@@ -212,14 +217,16 @@ void Taxonomy::generatePrefixEncoding(const std::string &filename) const {
 		uint64_t parent = nodes_[node.first].parent_id;
 		uint32_t height = node.second - 1;
 		while (parent != 0) {
-			memcpy(prefix_encoding + height, node_encoding_map[parent].data,
+			auto e = node_encoding_map[parent];
+			memcpy(prefix_encoding + height, e.data,
 						 num_hash_bytes);
 			parent = nodes_[parent].parent_id;
 			height--;
 		}
 
-		node_encoding_map[node.first] = EncodingArray(prefix_encoding,
-																									encoding_len_bytes);
+		;
+		node_encoding_map[node.first] = EncodingArray(prefix_encoding, encoding_len_bytes);
+																									
 		taxo_file << node.first << '\t';
 		for (uint32_t i = 0; i < encoding_len_bytes; i++)
 			taxo_file << (int)prefix_encoding[i] << ' ';
