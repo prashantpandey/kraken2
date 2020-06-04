@@ -194,7 +194,7 @@ struct EncodingArray
 };
 
 void Taxonomy::generatePrefixEncoding(const std::string &filename) const {
-	uint32_t num_hash_bits = log2 (node_count_);
+	float num_hash_bits = log2 (node_count_);
 	uint32_t num_hash_bytes = (num_hash_bits+8)/8;
 	uint32_t max_depth = maxDepth(1, *this);
 	
